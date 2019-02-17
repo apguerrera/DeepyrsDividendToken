@@ -126,7 +126,10 @@ contract ERC20 is IERC20, Owned {
   mapping(address=>Account) accounts;
   uint256 totalDividendPoints;
   uint256 unclaimedDividends;
+  mapping(address => uint256) public dividendsByAccount;
 
+  event DividendReceived(uint256 time, address indexed sender, uint256 amount);
+  event WithdrawalDividends(uint256 time, address indexed holder, uint256 amount);
 
   event Mint(address indexed to, uint256 amount);
   event MintStarted();
@@ -304,32 +307,44 @@ contract ERC20 is IERC20, Owned {
     // Dividends
     //------------------------------------------------------------------------
 
-    function dividendsOwing(address account) internal view returns(uint256) {
+    function _dividendsOwing(address account) internal view returns(uint256) {
         uint256 newDividendPoints = totalDividendPoints - accounts[account].lastDividendPoints;
         return (accounts[account].balance * newDividendPoints) / pointMultiplier;
     }
 
     function _updateAccount(address account) internal {
-          uint256 owing = dividendsOwing(account);
+          uint256 owing = _dividendsOwing(account);
           if (owing > 0) {
               unclaimedDividends = unclaimedDividends.sub(owing);
               accounts[account].lastDividendPoints = totalDividendPoints;
               // transfer owed dividends
+              dividendsByAccount[account]=dividendsByAccount[account].add(owing);
           }
     }
 
-    function depositDividends(uint256 amount) public {
+    function _depositDividends(uint256 amount) internal {
         totalDividendPoints += (amount * pointMultiplier / totalSupply());
         unclaimedDividends += amount;
         // accept dividends
+        emit DividendReceived(now, msg.sender, amount);
+    }
+
+    function withdrawlDividends () public  {
+         _updateAccount(msg.sender);
+         uint256 _unclaimed = dividendsByAccount[msg.sender];
+         dividendsByAccount[msg.sender] = 0;
+
+         require(transfer(msg.sender, _unclaimed));
+         emit WithdrawalDividends(now,  msg.sender,  _unclaimed);
 
     }
 
   // ------------------------------------------------------------------------
-  // Don't accept ETH
+  //  Deposit ETH
   // ------------------------------------------------------------------------
   function () public payable {
-      revert();
+      require(msg.value > 0);
+      _depositDividends(msg.value);
   }
 
   // ------------------------------------------------------------------------

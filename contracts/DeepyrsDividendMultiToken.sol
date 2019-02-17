@@ -380,7 +380,7 @@ contract DividendToken is IERC20, Owned {
             dividendTokenCount = dividendTokenCount + 1;
         }
         // accept tokens
-        _transferDividendTokens(_token,this, _amount );
+        require(IERC20(_token).transferFrom(msg.sender, address(this), _amount));
         _depositDividends(_amount,_token);
     }
 
@@ -395,6 +395,7 @@ contract DividendToken is IERC20, Owned {
     //------------------------------------------------------------------------
     // Dividends: Claim accrued dividends
     //------------------------------------------------------------------------
+
     function withdrawlDividends () public  {
         uint256 i;
         _updateAccount(msg.sender);
@@ -413,21 +414,23 @@ contract DividendToken is IERC20, Owned {
         emit WithdrawalDividends(msg.sender, _token, _unclaimed);
     }
 
-    //------------------------------------------------------------------------
-    // Dividends: Helper functions
-    //------------------------------------------------------------------------
-    function _initDividends() internal {
-        dividendTokenIndex[0] = address(0x0);
-        dividendTokenCount = 1;
-    }
-
-    function _transferDividendTokens(address _token, address /*_account*/, uint256 /*_amount*/) internal pure  {
-        // transfer dividends owed, to be replaced
+    function _transferDividendTokens(address _token, address /*_account*/, uint256 /*_amount*/) internal pure   {
+        // transfer dividends, will need to be replaced
         if (_token != address(0x0)) {
                // require(IERC20(_token).transfer(_account, _amount));
         } else {
                // require(transfer(_account, _amount));
         }
+    }
+
+    //------------------------------------------------------------------------
+    // Dividends: Helper functions
+    //------------------------------------------------------------------------
+
+    function _initDividends() internal {
+        dividendTokenIndex[0] = address(0x0);
+        dividendTokenCount = 1;
+        _depositDividends(msg.value,address(0x0));
     }
 
     function _scanForFirstTokenDividend(address _token, uint256 _index) internal view returns (uint256) {  //view internal
