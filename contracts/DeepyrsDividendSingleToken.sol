@@ -1,14 +1,11 @@
 pragma solidity ^0.4.25;
 
 // ----------------------------------------------------------------------------
-// 'DEEPYR' token contract
+// Deepyr's ERC20 receiving dividend token contract based on yarrumretep's
+// Dividend Token contract 
+// For research purposes only. NOT to be used for tokens of any value
 //
-// Symbol      : DEEPYR
-// Name        : Deepyr Token
-// Total supply: 10,000,000.000000000000000000
-// Decimals    : 18
 //
-// Enjoy.
 //
 // (c) Adrian Guerrera / Deepyr Pty Ltd 2019. The MIT Licence.
 //

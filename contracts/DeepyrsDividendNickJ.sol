@@ -1,14 +1,9 @@
 pragma solidity ^0.4.25;
 
 // ----------------------------------------------------------------------------
-// 'DEEPYR' token contract
+// Deepyr's dividend token contract based on Nick Johnson's blog post
+//  For research purposes only. NOT to be used for tokens of any value
 //
-// Symbol      : DEEPYR
-// Name        : Deepyr Token
-// Total supply: 10,000,000.000000000000000000
-// Decimals    : 18
-//
-// Enjoy.
 //
 // (c) Adrian Guerrera / Deepyr Pty Ltd 2018. The MIT Licence.
 //
