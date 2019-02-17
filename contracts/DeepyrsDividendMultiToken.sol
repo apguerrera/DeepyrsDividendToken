@@ -158,6 +158,7 @@ contract DividendToken is IERC20, Owned {
         totalSupply_ = 10000000 * 10**uint(decimals);
         transferable = true;
         accounts[owner].balance = totalSupply_;
+        _initDividends();
         emit Transfer(address(0), owner, totalSupply_);
     }
 
@@ -369,28 +370,26 @@ contract DividendToken is IERC20, Owned {
     function approveTokenDividend(uint256 _amount,address _token) external  {
         require(_amount > 0 || _token != address(0));
         require(IERC20(_token).approve(this, _amount));
-        _depositDividends(_amount,_token);
     }
 
     function depositTokenDividend(uint256 _amount,address _token) external  {
         require(_amount > 0 || _token != address(0));
+        // For initial deposits, add new token to mappings
+        if (totalDividendPoints[_token] == 0  ) {
+            dividendTokenIndex[dividendTokenCount] = _token;
+            dividendTokenCount = dividendTokenCount + 1;
+        }
         // accept tokens
         _transferDividendTokens(_token,this, _amount );
         _depositDividends(_amount,_token);
     }
 
-    function _depositDividends(uint256 amount, address token) internal {
-        // For initial deposits, add new token to mappings
-        if (totalDividendPoints[token] == 0) {
-            dividendTokenIndex[dividendTokenCount] = token;
-            dividendTokenCount = dividendTokenCount + 1;
-        }
+    function _depositDividends(uint256 _amount, address _token) internal {
         // Convert deposit into points
-        totalDividendPoints[token] += (amount * pointMultiplier ) / totalSupply();
-        unclaimedDividends[token] += amount;
-        dividends.push(Dividend(token, amount, totalDividendPoints[token]));
-
-        emit DividendReceived(now, msg.sender, amount);
+        totalDividendPoints[_token] += (_amount * pointMultiplier ) / totalSupply();
+        unclaimedDividends[_token] += _amount;
+        dividends.push(Dividend(_token, _amount, totalDividendPoints[_token]));
+        emit DividendReceived(now, msg.sender, _amount);
     }
 
     //------------------------------------------------------------------------
@@ -415,8 +414,13 @@ contract DividendToken is IERC20, Owned {
     }
 
     //------------------------------------------------------------------------
-    // Dividends: Transfer and Helper functions
+    // Dividends: Helper functions
     //------------------------------------------------------------------------
+    function _initDividends() internal {
+        dividendTokenIndex[0] = address(0x0);
+        dividendTokenCount = 1;
+    }
+
     function _transferDividendTokens(address _token, address /*_account*/, uint256 /*_amount*/) internal pure  {
         // transfer dividends owed, to be replaced
         if (_token != address(0x0)) {
