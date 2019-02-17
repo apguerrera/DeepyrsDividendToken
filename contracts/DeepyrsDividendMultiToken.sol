@@ -357,7 +357,6 @@ contract DividendToken is IERC20, Owned {
 
     function _updateAccountByToken(address _account, address _token) internal {
         uint256 _owing = _dividendsOwing(_account, _token);
-        emit LogUint(_owing, "_owing");
         if (_owing > 0) {
             unclaimedDividendByAccount[_account][_token] = unclaimedDividendByAccount[_account][_token].add(_owing);
         }

@@ -126,7 +126,6 @@ contract ERC20 is IERC20, Owned {
   mapping(address=>Account) accounts;
   uint256 totalDividendPoints;
   uint256 unclaimedDividends;
-  mapping(address => uint256) public dividendsByAccount;
 
   event DividendReceived(uint256 time, address indexed sender, uint256 amount);
   event WithdrawalDividends(uint256 time, address indexed holder, uint256 amount);
@@ -304,13 +303,20 @@ contract ERC20 is IERC20, Owned {
   }
 
     //------------------------------------------------------------------------
-    // Dividends
+    // Dividend Functions
     //------------------------------------------------------------------------
 
-    function _dividendsOwing(address account) internal view returns(uint256) {
-        uint256 newDividendPoints = totalDividendPoints - accounts[account].lastDividendPoints;
-        return (accounts[account].balance * newDividendPoints) / pointMultiplier;
+    function updateAccount() public {
+        _updateAccount(msg.sender);
     }
+
+    function dividendsOwing() public view returns (uint256) {
+        return _dividendsOwing(msg.sender);
+    }
+
+    //------------------------------------------------------------------------
+    // Dividends Internals
+    //------------------------------------------------------------------------
 
     function _updateAccount(address account) internal {
           uint256 owing = _dividendsOwing(account);
@@ -318,8 +324,13 @@ contract ERC20 is IERC20, Owned {
               unclaimedDividends = unclaimedDividends.sub(owing);
               accounts[account].lastDividendPoints = totalDividendPoints;
               // transfer owed dividends
-              dividendsByAccount[account]=dividendsByAccount[account].add(owing);
+              require(transfer(account, owing));
           }
+    }
+
+    function _dividendsOwing(address account) internal view returns(uint256) {
+        uint256 newDividendPoints = totalDividendPoints - accounts[account].lastDividendPoints;
+        return (accounts[account].balance * newDividendPoints) / pointMultiplier;
     }
 
     function _depositDividends(uint256 amount) internal {
@@ -329,15 +340,6 @@ contract ERC20 is IERC20, Owned {
         emit DividendReceived(now, msg.sender, amount);
     }
 
-    function withdrawlDividends () public  {
-         _updateAccount(msg.sender);
-         uint256 _unclaimed = dividendsByAccount[msg.sender];
-         dividendsByAccount[msg.sender] = 0;
-
-         require(transfer(msg.sender, _unclaimed));
-         emit WithdrawalDividends(now,  msg.sender,  _unclaimed);
-
-    }
 
   // ------------------------------------------------------------------------
   //  Deposit ETH
