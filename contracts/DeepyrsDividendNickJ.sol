@@ -314,19 +314,17 @@ contract ERC20 is IERC20, Owned {
     //------------------------------------------------------------------------
 
     function _updateAccount(address account) internal {
-        if (accounts[account].lastDividendPoints != totalDividendPoints) {
-            uint256 owing = _dividendsOwing(account);
-            if (owing > 0) {
-                unclaimedDividends = unclaimedDividends.sub(owing);
-                accounts[account].lastDividendPoints = totalDividendPoints;
-                // transfer owed dividends
-                require(transfer(account, owing));
-            }
+        uint256 owing = _dividendsOwing(account);
+        if (owing > 0) {
+            unclaimedDividends = unclaimedDividends.sub(owing);
+            accounts[account].lastDividendPoints = totalDividendPoints;
+            // transfer owed dividends
+            require(transfer(account, owing));
         }
     }
 
     function _dividendsOwing(address account) internal view returns(uint256) {
-        uint256 newDividendPoints = totalDividendPoints - accounts[account].lastDividendPoints;
+        uint256 newDividendPoints = totalDividendPoints.sub(accounts[account].lastDividendPoints);
         return (accounts[account].balance * newDividendPoints) / pointMultiplier;
     }
 

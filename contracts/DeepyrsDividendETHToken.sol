@@ -1,10 +1,8 @@
 pragma solidity ^0.4.25;
 
 // ----------------------------------------------------------------------------
-// Deepyr's ERC20 receiving dividend token contract based on yarrumretep's
-// Dividend Token contract
-// For research purposes only. NOT to be used for tokens of any value
-//
+// Deepyr's Multi token dividend token contract
+//  For research purposes only. NOT to be used for tokens of any value
 //
 //
 // (c) Adrian Guerrera / Deepyr Pty Ltd 2019. The MIT Licence.
@@ -115,23 +113,21 @@ contract DividendToken is IERC20, Owned {
 
     // Dividends
     uint256 constant pointMultiplier = 10e32;
-    IERC20 public dividendTokenAddress;
+    address public dividendTokenAddress;
 
     struct Account {
         uint256 balance;
-        uint256 lastDividend;
+        uint256 lastDivPoints;
+        uint256 lastEthPoints;
+
     }
     mapping(address => Account) public accounts;
 
-    struct Dividend {
-      uint256 amount;
-      uint256 lastDividendPoints;
-    }
-    Dividend[] public dividends;  //internal
-
-    uint256 public totalDividendPoints;
-    uint256 public unclaimedDividends;
-    mapping(address => uint256) public unclaimedDividendByAccount;  // [account][token]
+    mapping(uint256 => address) public dividendTokenIndex;
+    mapping(address => uint256) public totalDividendPoints;
+    uint256 public totalEthPoints;
+    mapping(address => uint256) public unclaimedDividends;
+    mapping(address => mapping(address => uint256)) public unclaimedDividendByAccount;  // [account][token]
 
     event Mint(address indexed to, uint256 amount);
     event MintStarted();
@@ -153,7 +149,7 @@ contract DividendToken is IERC20, Owned {
         totalSupply_ = 10000000 * 10**uint(decimals);
         transferable = true;
         accounts[owner].balance = totalSupply_;
-        dividendTokenAddress = IERC20(0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359);
+        _initDividends();
         emit Transfer(address(0), owner, totalSupply_);
     }
 
@@ -321,35 +317,39 @@ contract DividendToken is IERC20, Owned {
     // Dividends
     //------------------------------------------------------------------------
 
-    function setDividendTokenAddress (address _token) public onlyOwner {
-        require(_token != address(0));
-        dividendTokenAddress = IERC20(_token);
+    function dividendsOwing(address _account, address _token) external view returns(uint256) {
+        _dividendsOwing(_account, _token);
     }
 
-    function dividendsOwing(address account) external view returns(uint256) {
-        return _dividendsOwing( account );
-    }
-
-    function _dividendsOwing(address account) internal view returns(uint256) {
-        uint256 newDividendPoints = totalDividendPoints.sub(accounts[account].lastDividendPoints);
-        return (accounts[account].balance * newDividendPoints) / pointMultiplier;
+    function _dividendsOwing(address _account, address _token) internal view returns(uint256) {
+        uint256 newDividendPoints;
+        if (_token == address(0x0)) {
+              newDividendPoints = totalEthPoints.sub(accounts[_account].lastEthPoints);
+        } else if (_token == dividendTokenAddress) {
+              newDividendPoints = totalDividendPoints[_account].sub(accounts[_account].lastDivPoints);
+        } else {
+              return 0;
+        }
+        return (accounts[_account].balance * newDividendPoints) / pointMultiplier;
     }
 
     //------------------------------------------------------------------------
     // Dividends: Token Transfers
     //------------------------------------------------------------------------
 
-     function updateAccount(address _account) public {  // internal
-        _updateAccount(_account);
-    }
-
-    function _updateAccount(address _account) internal {  // internal
-        uint256 _owing = _dividendsOwing(_account);
-        if (_owing > 0) {
-            unclaimedDividendByAccount[_account] = unclaimedDividendByAccount[_account].add(_owing);
+     function _updateAccount(address _account) internal {
+        if (accounts[_account].lastDivPoints < totalDividendPoints[_account]) {
+              _updateAccountByToken(_account,dividendTokenAddress);
         }
-        accounts[_account].lastDividend = dividends.length - 1;  // Think about gas limits
+        if (accounts[_account].lastEthPoints < totalEthPoints) {
+              _updateAccountByToken(_account,address(0x0));
+        }    }
 
+    function _updateAccountByToken(address _account, address _token) internal {
+        uint256 _owing = _dividendsOwing(_account, _token);
+        if (_owing > 0) {
+            unclaimedDividendByAccount[_account][_token] = unclaimedDividendByAccount[_account][_token].add(_owing);
+        }
     }
 
     //------------------------------------------------------------------------
@@ -365,49 +365,71 @@ contract DividendToken is IERC20, Owned {
         require(_amount > 0 );
         // accept tokens
         require(IERC20(dividendTokenAddress).transferFrom(msg.sender, address(this), _amount));
-        _depositDividends(_amount);
+        _depositDividends(_amount, dividendTokenAddress);
     }
 
-    function _depositDividends(uint256 amount) internal {
+    function _depositDividends(uint256 _amount, address _token) internal {
         // Convert deposit into points
-        totalDividendPoints += (amount * pointMultiplier ) / totalSupply();
-        unclaimedDividends += amount;
-        dividends.push(Dividend(amount, totalDividendPoints));
-
-        emit DividendReceived(now, msg.sender, amount);
+        unclaimedDividends[_token] += (_amount * pointMultiplier ) / totalSupply();
+        unclaimedDividends[_token] += _amount;
+        emit DividendReceived(now, msg.sender, _amount);
     }
+
 
     //------------------------------------------------------------------------
     // Dividends: Claim accrued dividends
     //------------------------------------------------------------------------
+
     function withdrawlDividends () public  {
         _updateAccount(msg.sender);
-        _withdrawlDividends();
-    }
-
-    function _withdrawlDividends() internal  {
-        uint256 _unclaimed = unclaimedDividendByAccount[msg.sender];
-        unclaimedDividends = unclaimedDividends.sub(_unclaimed);
-        unclaimedDividendByAccount[msg.sender] = 0;
-
-        _transferDividendTokens(dividendTokenAddress, msg.sender, _unclaimed );
-        emit WithdrawalDividends(msg.sender, dividendTokenAddress, _unclaimed);
-    }
-
-    function _transferDividendTokens(address _token, address /*_account*/, uint256 /*_amount*/) internal  {
-            // transfer dividends owed, to be replaced
-        if (_token != address(0x0)) {
-               // require(IERC20(_token).transfer(_account, _amount));
-        } else {
-               // require(transfer(_account, _amount));
+        if (unclaimedDividendByAccount[msg.sender][dividendTokenAddress]>0) {
+          _withdrawlDividendsByToken(dividendTokenAddress);
+        }
+        if (unclaimedDividendByAccount[msg.sender][address(0)]>0) {
+            _withdrawlDividendsByToken(address(0));
         }
     }
 
+    function _withdrawlDividendsByToken(address _token) internal  {
+        uint256 _unclaimed = unclaimedDividendByAccount[msg.sender][_token];
+        unclaimedDividends[_token] = unclaimedDividends[_token].sub(_unclaimed);
+        unclaimedDividendByAccount[msg.sender][_token] = 0;
+
+        _transferDividendTokens(_token,msg.sender, _unclaimed );
+        emit WithdrawalDividends(msg.sender, _token, _unclaimed);
+    }
+
+    function _transferDividendTokens(address _token, address /*_account*/, uint256 /*_amount*/) internal view   {
+        // transfer dividends, will need to be replaced
+        if (_token == address(0x0)) {
+             // require(transfer(_account, _amount));
+        } else if (_token == dividendTokenAddress) {
+             // require(IERC20(_token).transfer(_account, _amount));
+
+        }
+    }
+
+    //------------------------------------------------------------------------
+    // Dividends: Helper functions
+    //------------------------------------------------------------------------
+
+    function setDividendTokenAddress (address _token) public onlyOwner {
+        require(_token != address(0));
+        dividendTokenAddress = IERC20(_token);
+    }
+
+    function _initDividends() internal {
+        dividendTokenAddress = IERC20(0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359);
+        _depositDividends(msg.value,address(0x0));
+    }
+
+
     // ------------------------------------------------------------------------
-    // Dont accept ETH deposits as dividends
+    // Accept ETH deposits as dividends
     // ------------------------------------------------------------------------
     function () public payable {
-        revert();
+        require(msg.value > 0);
+        _depositDividends(msg.value,address(0x0));
     }
 
     // ------------------------------------------------------------------------
