@@ -119,15 +119,9 @@ contract DividendToken is IERC20, Owned {
 
     struct Account {
         uint256 balance;
-        uint256 lastDividend;
+        uint256 lastDividendPoints;
     }
     mapping(address => Account) public accounts;
-
-    struct Dividend {
-      uint256 amount;
-      uint256 lastDividendPoints;
-    }
-    Dividend[] public dividends;  //internal
 
     uint256 public totalDividendPoints;
     uint256 public unclaimedDividends;
@@ -339,17 +333,16 @@ contract DividendToken is IERC20, Owned {
     // Dividends: Token Transfers
     //------------------------------------------------------------------------
 
-     function updateAccount(address _account) public {  // internal
+     function updateAccount(address _account) public {
         _updateAccount(_account);
     }
 
-    function _updateAccount(address _account) internal {  // internal
+    function _updateAccount(address _account) internal {
         uint256 _owing = _dividendsOwing(_account);
         if (_owing > 0) {
             unclaimedDividendByAccount[_account] = unclaimedDividendByAccount[_account].add(_owing);
+            accounts[_account].lastDividendPoints = totalDividendPoints;
         }
-        accounts[_account].lastDividend = dividends.length - 1;  // Think about gas limits
-
     }
 
     //------------------------------------------------------------------------
@@ -372,7 +365,6 @@ contract DividendToken is IERC20, Owned {
         // Convert deposit into points
         totalDividendPoints += (amount * pointMultiplier ) / totalSupply();
         unclaimedDividends += amount;
-        dividends.push(Dividend(amount, totalDividendPoints));
 
         emit DividendReceived(now, msg.sender, amount);
     }
@@ -394,7 +386,7 @@ contract DividendToken is IERC20, Owned {
         emit WithdrawalDividends(msg.sender, dividendTokenAddress, _unclaimed);
     }
 
-    function _transferDividendTokens(address _token, address /*_account*/, uint256 /*_amount*/) internal  {
+    function _transferDividendTokens(address _token, address /*_account*/, uint256 /*_amount*/) internal pure  {
             // transfer dividends owed, to be replaced
         if (_token != address(0x0)) {
                // require(IERC20(_token).transfer(_account, _amount));
