@@ -3,11 +3,11 @@ pragma solidity ^0.4.25;
 // ----------------------------------------------------------------------------
 // Deepyr's dividend token contract based on Nick Johnson's blog post
 //  For research purposes only. NOT to be used for tokens of any value
-//
+//  https://medium.com/@weka/dividend-bearing-tokens-on-ethereum-42d01c710657
 //
 // (c) Adrian Guerrera / Deepyr Pty Ltd 2018. The MIT Licence.
 //
-// Code borrowed from various mentioned and from contracts
+// Code borrowed from authors mentioned and from contracts by BokkyPooBah
 // (c) BokkyPooBah / Bok Consulting Pty Ltd 2018. The MIT Licence.
 // ----------------------------------------------------------------------------
 
@@ -314,13 +314,15 @@ contract ERC20 is IERC20, Owned {
     //------------------------------------------------------------------------
 
     function _updateAccount(address account) internal {
-          uint256 owing = _dividendsOwing(account);
-          if (owing > 0) {
-              unclaimedDividends = unclaimedDividends.sub(owing);
-              accounts[account].lastDividendPoints = totalDividendPoints;
-              // transfer owed dividends
-              require(transfer(account, owing));
-          }
+        if (accounts[account].lastDividendPoints != totalDividendPoints) {
+            uint256 owing = _dividendsOwing(account);
+            if (owing > 0) {
+                unclaimedDividends = unclaimedDividends.sub(owing);
+                accounts[account].lastDividendPoints = totalDividendPoints;
+                // transfer owed dividends
+                require(transfer(account, owing));
+            }
+        }
     }
 
     function _dividendsOwing(address account) internal view returns(uint256) {

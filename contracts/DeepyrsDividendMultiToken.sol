@@ -7,7 +7,7 @@ pragma solidity ^0.4.25;
 //
 // (c) Adrian Guerrera / Deepyr Pty Ltd 2019. The MIT Licence.
 //
-// Code borrowed from various mentioned and from contracts
+// Code borrowed from various authors mentioned and from contracts
 // (c) BokkyPooBah / Bok Consulting Pty Ltd 2018. The MIT Licence.
 // ----------------------------------------------------------------------------
 
@@ -344,10 +344,12 @@ contract DividendToken is IERC20, Owned {
     //------------------------------------------------------------------------
 
      function _updateAccount(address _account) internal {
-        for (uint256 i = 0; i < dividendTokenCount; i++) {
-              _updateAccountByToken(_account,dividendTokenIndex[i]);
+        if (accounts[_account].lastDividend < dividends.length - 1) {
+            for (uint256 i = 0; i < dividendTokenCount; i++) {
+                  _updateAccountByToken(_account,dividendTokenIndex[i]);
+            }
+            accounts[_account].lastDividend = dividends.length - 1;
         }
-        accounts[_account].lastDividend = dividends.length - 1;
     }
 
     function _updateAccountByToken(address _account, address _token) internal {

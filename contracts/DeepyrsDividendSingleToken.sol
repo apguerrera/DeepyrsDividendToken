@@ -2,14 +2,14 @@ pragma solidity ^0.4.25;
 
 // ----------------------------------------------------------------------------
 // Deepyr's ERC20 receiving dividend token contract based on yarrumretep's
-// Dividend Token contract 
+// Dividend Token contract
 // For research purposes only. NOT to be used for tokens of any value
 //
 //
 //
 // (c) Adrian Guerrera / Deepyr Pty Ltd 2019. The MIT Licence.
 //
-// Code borrowed from various mentioned and from contracts
+// Code borrowed from various authors mentioned and from contracts
 // (c) BokkyPooBah / Bok Consulting Pty Ltd 2018. The MIT Licence.
 // ----------------------------------------------------------------------------
 
@@ -343,17 +343,15 @@ contract DividendToken is IERC20, Owned {
 
      function updateAccount(address _account) public {  // internal
         _updateAccount(_account);
-        accounts[_account].lastDividend = dividends.length - 1;  // Think about gas limits
-        emit LogUint(accounts[_account].lastDividend, "accounts[_account].lastDividend");
     }
 
     function _updateAccount(address _account) internal {  // internal
         uint256 _owing = _dividendsOwing(_account);
-        emit LogUint(_owing, "_owing");
         if (_owing > 0) {
             unclaimedDividendByAccount[_account] = unclaimedDividendByAccount[_account].add(_owing);
-            emit LogUint(unclaimedDividendByAccount[_account], "unclaimedDividendByAccount[_account]");
         }
+        accounts[_account].lastDividend = dividends.length - 1;  // Think about gas limits
+
     }
 
     //------------------------------------------------------------------------
@@ -392,9 +390,8 @@ contract DividendToken is IERC20, Owned {
     function _withdrawlDividends() internal  {
         uint256 _unclaimed = unclaimedDividendByAccount[msg.sender];
         unclaimedDividends = unclaimedDividends.sub(_unclaimed);
-        emit LogUint(unclaimedDividends, "Unclaimed Dividends By Token");
-
         unclaimedDividendByAccount[msg.sender] = 0;
+
         _transferDividendTokens(dividendTokenAddress, msg.sender, _unclaimed );
         emit WithdrawalDividends(msg.sender, dividendTokenAddress, _unclaimed);
     }
@@ -402,11 +399,9 @@ contract DividendToken is IERC20, Owned {
     function _transferDividendTokens(address _token, address /*_account*/, uint256 _amount) internal  {
             // transfer dividends owed, to be replaced
         if (_token != address(0x0)) {
-                emit LogUint(_amount, "Transfer Token");
                // require(IERC20(_token).transfer(_account, _amount));
         } else {
                // require(transfer(_account, _amount));
-                emit LogUint(_amount, "Transfer ETH");
         }
     }
 
