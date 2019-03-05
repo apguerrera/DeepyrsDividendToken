@@ -350,10 +350,6 @@ contract DividendToken is IERC20, Owned {
     //------------------------------------------------------------------------
     // Dividends: Token Deposits
     //------------------------------------------------------------------------
-    function approveTokenDividend(uint256 _amount) external  {
-        require(_amount > 0);
-        require(IERC20(dividendTokenAddress).approve(this, _amount));
-    }
 
     function depositTokenDividend(uint256 _amount) external  {
         require(_amount > 0 );

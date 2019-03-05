@@ -130,6 +130,11 @@ contract ERC20 is IERC20, Owned {
   }
   Deposits[] public deposits;  //internal
 
+  uint256 public totalDeposits;
+  uint256 public unclaimedDeposits;
+
+  event DepositReceived(address indexed from, uint256 amount, uint256 timestamp);
+
 
   // ------------------------------------------------------------------------
   // Constructor
