@@ -156,7 +156,7 @@ contract DividendToken is IERC20, Owned {
     }
 
     function totalSupply() public view returns (uint256) {
-        return totalSupply_;
+        return totalSupply_;    // Bok add the diff of accountzero and factor in amount
     }
 
     function balanceOf(address _owner) public view returns (uint256) {
@@ -177,8 +177,8 @@ contract DividendToken is IERC20, Owned {
 
     function transfer(address _to, uint256 _value) public returns (bool) {
         require(transferable);
-        require(_value <= accounts[msg.sender].balance);
-        require(_to != address(0));
+        require(_value <= accounts[msg.sender].balance);   // Bok not needed
+        require(_to != address(0));                        // might not restrict transfer to account zero (erc20)
 
         // Added for dividends
         _updateAccount(msg.sender);
@@ -192,9 +192,9 @@ contract DividendToken is IERC20, Owned {
 
     function transferFrom(  address _from,  address _to,uint256 _value )  public returns (bool) {
         require(transferable);
-        require(_value <= accounts[_from].balance);
-        require(_value <= allowed_[_from][msg.sender]);
-        require(_to != address(0));
+        require(_value <= accounts[_from].balance);  // Bok not needed
+        require(_value <= allowed_[_from][msg.sender]); // Bok not needed
+        require(_to != address(0));   // might not restrict transfer to account zero
 
         // Added for dividends
         _updateAccount(_from);
@@ -387,12 +387,12 @@ contract DividendToken is IERC20, Owned {
         emit WithdrawalDividends(msg.sender, _token, _unclaimed);
     }
 
-    function _transferDividendTokens(address _token, address /*_account*/, uint256 /*_amount*/) internal view   {
+    function _transferDividendTokens(address _token, address _account, uint256 _amount) internal view   {
         // transfer dividends, will need to be replaced
         if (_token == address(0x0)) {
-             // require(transfer(_account, _amount));
+             transfer(_account, _amount);  //  bok google transfer send ethereum and check the need for require()
         } else if (_token == dividendTokenAddress) {
-             // require(IERC20(_token).transfer(_account, _amount));
+             require(IERC20(_token).transfer(_account, _amount));
         }
     }
 

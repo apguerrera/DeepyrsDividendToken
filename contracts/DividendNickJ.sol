@@ -301,12 +301,12 @@ contract ERC20 is IERC20, Owned {
     // Dividend Functions
     //------------------------------------------------------------------------
 
-    function updateAccount() public {
-        _updateAccount(msg.sender);
+    function updateAccount(address account) public {
+        _updateAccount(account);
     }
 
-    function dividendsOwing() public view returns (uint256) {
-        return _dividendsOwing(msg.sender);
+    function dividendsOwing(address account) public view returns (uint256) {
+        return _dividendsOwing(account);
     }
 
     //------------------------------------------------------------------------

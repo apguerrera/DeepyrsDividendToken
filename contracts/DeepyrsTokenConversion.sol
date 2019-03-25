@@ -297,10 +297,11 @@ contract ERC20 is IERC20, Owned {
 // Don't accept ETH
 // ------------------------------------------------------------------------
 
-  function userDeposit (_amount) public onlyOwner {
+  function userDeposit (_from, _amount) public onlyOwner {
     totalDeposits += _amount ;
     unclaimedDeposits += _amount;
-    dividends.push(Dividend(msg.sender, _amount, now));
+    uint256 key = keccak();
+    dividends.push(Dividend(_from, _amount, now));
     // make deposit offchain and mint temp tokens
     _mint(_to, _amount);
 

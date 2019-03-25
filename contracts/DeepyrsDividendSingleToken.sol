@@ -315,11 +315,6 @@ contract DividendToken is IERC20, Owned {
     // Dividends
     //------------------------------------------------------------------------
 
-    function setDividendTokenAddress (address _token) public onlyOwner {
-        require(_token != address(0));
-        dividendTokenAddress = IERC20(_token);
-    }
-
     function dividendsOwing(address account) external view returns(uint256) {
         return _dividendsOwing( account );
     }
@@ -374,25 +369,42 @@ contract DividendToken is IERC20, Owned {
     //------------------------------------------------------------------------
     function withdrawlDividends () public  {
         _updateAccount(msg.sender);
-        _withdrawlDividends();
+        _withdrawlDividends(msg.sender);
     }
-
-    function _withdrawlDividends() internal  {
-        uint256 _unclaimed = unclaimedDividendByAccount[msg.sender];
+    function withdrawlDividendsByAccount (_account) public onlyOwner {
+        _updateAccount(_account);
+        _withdrawlDividends(_account);
+    }
+    function _withdrawlDividends(address _account) internal  {
+        uint256 _unclaimed = unclaimedDividendByAccount[_account];
         unclaimedDividends = unclaimedDividends.sub(_unclaimed);
-        unclaimedDividendByAccount[msg.sender] = 0;
+        unclaimedDividendByAccount[_account] = 0;
 
-        _transferDividendTokens(dividendTokenAddress, msg.sender, _unclaimed );
-        emit WithdrawalDividends(msg.sender, dividendTokenAddress, _unclaimed);
+        _transferDividendTokens(dividendTokenAddress, _account, _unclaimed );
+        emit WithdrawalDividends(_account, dividendTokenAddress, _unclaimed);
     }
 
     function _transferDividendTokens(address _token, address /*_account*/, uint256 /*_amount*/) internal pure  {
             // transfer dividends owed, to be replaced
         if (_token != address(0x0)) {
-               // require(IERC20(_token).transfer(_account, _amount));
+               require(IERC20(_token).transfer(_account, _amount));
         } else {
-               // require(transfer(_account, _amount));
+               require(transfer(_account, _amount));
         }
+    }
+
+
+    //------------------------------------------------------------------------
+    // Dividends: Helper functions
+    //------------------------------------------------------------------------
+    function setDividendTokenAddress (address _token) public onlyOwner {
+        require(_token != address(0));
+        dividendTokenAddress = IERC20(_token);
+    }
+
+    function _initDividends() internal {
+        dividendTokenAddress = IERC20(0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359);
+        _depositDividends(msg.value,address(0x0));
     }
 
     // ------------------------------------------------------------------------
