@@ -383,6 +383,10 @@ contract DividendToken is IERC20, Owned {
         }
     }
 
+// transfer 5 dokens and 100 unclaimed dividneds
+// transfer gas cons
+// withdraw gas cost  
+
     //------------------------------------------------------------------------
     // Dividends: Token Deposits
     //------------------------------------------------------------------------
@@ -416,16 +420,16 @@ contract DividendToken is IERC20, Owned {
     // Dividends: Claim accrued dividends
     //------------------------------------------------------------------------
 
-    function withdrawlDividends () public  {
+    function withdrawDividends () public  {
         uint256 i;
         _updateAccount(msg.sender);
         for (i = 0; i < dividendTokenCount; i++) {
             address tmpToken = dividendTokenIndex[i];
-            _withdrawlDividendsByToken(tmpToken);
+            _withdrawDividendsByToken(tmpToken);
         }
     }
 
-    function _withdrawlDividendsByToken(address _token) internal  {
+    function _withdrawDividendsByToken(address _token) internal  {
         uint256 _unclaimed = unclaimedDividendByAccount[msg.sender][_token];
         unclaimedDividends[_token] = unclaimedDividends[_token].sub(_unclaimed);
         unclaimedDividendByAccount[msg.sender][_token] = 0;

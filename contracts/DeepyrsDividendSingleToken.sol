@@ -367,15 +367,15 @@ contract DividendToken is IERC20, Owned {
     //------------------------------------------------------------------------
     // Dividends: Claim accrued dividends
     //------------------------------------------------------------------------
-    function withdrawlDividends () public  {
+    function withdrawDividends () public  {
         _updateAccount(msg.sender);
-        _withdrawlDividends(msg.sender);
+        _withdrawDividends(msg.sender);
     }
-    function withdrawlDividendsByAccount (_account) public onlyOwner {
+    function withdrawDividendsByAccount (_account) public onlyOwner {
         _updateAccount(_account);
-        _withdrawlDividends(_account);
+        _withdrawDividends(_account);
     }
-    function _withdrawlDividends(address _account) internal  {
+    function _withdrawDividends(address _account) internal  {
         uint256 _unclaimed = unclaimedDividendByAccount[_account];
         unclaimedDividends = unclaimedDividends.sub(_unclaimed);
         unclaimedDividendByAccount[_account] = 0;

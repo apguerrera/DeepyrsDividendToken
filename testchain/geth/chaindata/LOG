@@ -4,3 +4,6 @@
 15:38:33.898969 version@stat F·[] S·0B[] Sc·[]
 15:38:33.899443 db@janitor F·2 G·0
 15:38:33.899500 db@open done T·6.541265ms
+=============== Mar 11, 2019 (AEDT) ===============
+18:32:06.740232 db@close closing
+18:32:06.742549 db@close done T·3.321834ms

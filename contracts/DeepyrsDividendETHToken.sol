@@ -132,7 +132,7 @@ contract DividendToken is IERC20, Owned {
     event TransfersEnabled();
     event TransfersDisabled();
 
-    event DividendReceived(uint256 time, address indexed sender, uint256 amount);
+    event DividendReceived(uint256 time, address indexed sender, address indexed token, uint256 amount);
     event WithdrawalDividends(address indexed holder, address indexed token, uint256 amount);
     event LogUint(uint256 amount, string msglog);
 
@@ -362,23 +362,23 @@ contract DividendToken is IERC20, Owned {
         // Convert deposit into points
         totalDividendPoints[_token] += (_amount * pointMultiplier ) / totalSupply();
         unclaimedDividends[_token] += _amount;
-        emit DividendReceived(now, msg.sender, _amount);
+        emit DividendReceived(now, msg.sender, _token, _amount);
     }
 
     //------------------------------------------------------------------------
     // Dividends: Claim accrued dividends
     //------------------------------------------------------------------------
-    function withdrawlDividends () public  {
+    function withdrawDividends () public  {
         _updateAccount(msg.sender);
         if (unclaimedDividendByAccount[msg.sender][dividendTokenAddress]>0) {
-          _withdrawlDividendsByToken(dividendTokenAddress);
+          _withdrawDividendsByToken(dividendTokenAddress);
         }
         if (unclaimedDividendByAccount[msg.sender][address(0)]>0) {
-            _withdrawlDividendsByToken(address(0));
+            _withdrawDividendsByToken(address(0));
         }
     }
 
-    function _withdrawlDividendsByToken(address _token) internal  {
+    function _withdrawDividendsByToken(address _token) internal  {
         uint256 _unclaimed = unclaimedDividendByAccount[msg.sender][_token];
         unclaimedDividends[_token] = unclaimedDividends[_token].sub(_unclaimed);
         unclaimedDividendByAccount[msg.sender][_token] = 0;
